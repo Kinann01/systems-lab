@@ -2,8 +2,8 @@
 #include <uapi/linux/in.h>
 
 /**
-* track connect() to filter out dns traffic.we use a map 
-* for that and set 1 to the corresponding fd this fd 
+* track connect() to filter out dns traffic. We use a map
+* for that and set 1 to the corresponding fd, this fd
 * will be used under sendmmsg() as a predicate.
 */
 tracepoint:syscalls:sys_enter_connect
@@ -14,7 +14,7 @@ tracepoint:syscalls:sys_enter_connect
 
     if ($port != 53) { return; }
 
-    if ($sa->sin_family != AF_INET) { return; } 
+    if ($sa->sin_family != AF_INET) { return; }
 
     @dns_sock[pid, args->fd] = 1;
     time("%Y-%m-%d %H:%M:%S ");
@@ -22,19 +22,19 @@ tracepoint:syscalls:sys_enter_connect
 }
 
 /**
-* For DNS, we assume two messages within a single 
+* For DNS, we assume two messages within a single
 * sendmmsg() sys call. 'A' and 'AAAA'
 */
-tracepoint:syscalls:sys_enter_sendmmsg 
+tracepoint:syscalls:sys_enter_sendmmsg
 / @dns_sock[pid, args->fd] == 1 /
 {
     time("%Y-%m-%d %H:%M:%S ");
     printf("Tracing sendmmsg() ... uid=%d pid=%d comm=%s fd=%d - contains %d messages\n", uid, pid, comm, args->fd, args->vlen);
 
     $limit = args->vlen;
-    $base = args->mmsg;  
+    $base = args->mmsg;
 
-    $mmsghdr = $base[0]; 
+    $mmsghdr = $base[0];
     $iov_base = $mmsghdr.msg_hdr.msg_iov->iov_base;
     $iov_len = $mmsghdr.msg_hdr.msg_iov->iov_len;
     $buffer = buf($iov_base, $iov_len);
@@ -43,11 +43,11 @@ tracepoint:syscalls:sys_enter_sendmmsg
     $limit--;
     if ($limit == 0) { return; }
 
-    $mmsghdr = $base[1]; 
+    $mmsghdr = $base[1];
     $iov_base = $mmsghdr.msg_hdr.msg_iov->iov_base;
     $iov_len = $mmsghdr.msg_hdr.msg_iov->iov_len;
     $buffer = buf($iov_base, $iov_len);
-    printf("Dumping second message ==%r== \n", $buffer); 
+    printf("Dumping second message ==%r== \n", $buffer);
 
     @dns_messages[pid, comm] += args->vlen;
 }
