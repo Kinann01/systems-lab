@@ -24,9 +24,9 @@ typedef enum {
 } err_ring_buffer_t;
 
 
-ring_buffer_t* init_rb(ring_buffer_t*);
-err_ring_buffer_t enqueue(void*, ring_buffer_t*);
-err_ring_buffer_t dequeue(void*, ring_buffer_t*);
+err_ring_buffer_t init_rb(ring_buffer_t** rb, size_t cap);
+err_ring_buffer_t enqueue_rb(void*, ring_buffer_t*);
+err_ring_buffer_t dequeue_rb(void**, ring_buffer_t*);
 void free_rb(ring_buffer_t*);
  
 #endif
